@@ -142,3 +142,80 @@ func Validate(c *gin.Context) {
 		"message": user,
 	})
 }
+
+// Update User
+func UpdateUser(c *gin.Context) {
+	id := c.Param("id")
+
+	db := database.ConnectionDB()
+	var user models.User
+
+	if err := db.First(&user, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  false,
+			"message": "User Not Found.",
+		})
+
+		return
+	}
+
+	var update app.UserUpdateDelete
+	if err := c.ShouldBindJSON(&update); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  false,
+			"message": err.Error(),
+		})
+
+		return
+	}
+
+	user.Username = update.Username
+	user.Email = update.Email
+	user.Password = update.Password
+
+	if err := db.Save(&user).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  false,
+			"message": "Failed to Update User",
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  true,
+		"message": "Successfully Update User.",
+	})
+}
+
+// Delete User
+func DeleteUser(c *gin.Context) {
+	id := c.Param("id")
+
+	db := database.ConnectionDB()
+	var user models.User
+
+	if err := db.First(&user, id).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{
+			"status":  false,
+			"message": "User Not Found.",
+		})
+
+		return
+	}
+
+	// Menghapus data User dari Database
+	if err := db.Where("id = ?", id).Unscoped().Delete(&user).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"status":  false,
+			"message": "Failed to Delete User",
+		})
+
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"status":  true,
+		"message": "User Successfully Deleted.",
+	})
+}
